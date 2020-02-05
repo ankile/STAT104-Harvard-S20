@@ -1,0 +1,338 @@
+---
+title: "Problem Set 1"
+author: "Lars Lien Ankile"
+date: "SECTION LEADER + TIME"
+fontsize: 11pt
+geometry: margin=1in
+
+output:
+  pdf_document:
+    fig_width: 5
+    fig_height: 3.5
+---
+
+## Problem 1.
+
+a)
+This method of selected gives no guarantees about the diverseness of the sample and whether or not this sample will be representative for the whole. E.g. if all the smallest firms happens to come before the larger firms in the phonebook, then the data collected might be very misleading.
+
+b)
+The readers of Prevention magazine is not unlikely a self-selected group of people who care a lot about their health in the first place, and that is why they chose to subscribe to the magazine. This will in turn result in a very unrepresentative sample for the population at large.
+
+c)
+Even though the clinics are accessible to anyone, that doesn't mean that all homeless people would actually go to a clinic. I find it more likely that the homeless who are actually suffering from mental illness are more likely to go to a clinic than those who are not suffering.
+
+
+## Problem 2.
+
+a)
+It can be dangerous to mix up correlation with causation, i.e. just because two events often are observed together, that doesn't necessarily mean that one event is making the other happen. This headline makes it sound like people who are more optimistic suffer less from cardiovascular disease *because* they're more positive. If that is true is unknown and the only thing we can conclude from this is that people who are optimistic also *happen* to also suffer less from cardiovascular disease, for *some* reason.
+
+b)
+To have a study actually say something about causation and not only correlation, one would have to design a study that controls for all spurius causes that could impact both positivity and cardiovascular disease. Somehow, if one could take a random sample of the population, divide it into two groups with roughly similar people in both groups, and then make one group think optimistically and make the other think pessimistically, while trying to control for any other effect, one could potentially say a little bit more about the effect, I'd imagine.
+
+c)
+Just because someone is on average less likely to have some event occur it doesn't mean that all optimistic people have lower risk of cardiovascular events than all pessimistic people. Surely there will be pessimistic people who just happen to have a great cardiovascular system and will live to a hundred, while there are optimistic smokers who'll die from a hearth attack tomorrow.
+
+
+## Problem 3.
+
+a)
+Both graphs shows the distribution of the ages that women had their first child for a given year. The year is 1980 for the first and 2016 for the second. In 1980, for example, we see that some, but very few people had their first child at 14, while having one's first child was the most common at roughly 19. The graph is not symmetric as it has a long tail to the right of the distribution and is therefore right-skewed. The graph for 2016 shows a shift of some of the population to the right. Also, there's two distinct tops on the graph. This graph also has a tail to the right which makes it right-skewed too, but not as much as the former one, though.
+
+b)
+
+  i.
+  I think that the change in the distribution can be best explained by an increase in the percentage of women who take higher education.
+  
+  ii.
+  There's a top at 19 as in the graph for 1980, but now there's also one at age 28. This suggests to me that many people self-select into two groups, presumably based on whether they take higher education or not. The second peak on the graph comes from people who have taken education and waited until they are more established before they have their first child.
+
+
+\newpage
+
+
+## Problem 4.
+
+a) 
+
+```{r}
+#load the data
+load("datasets/gun_deaths.Rdata")
+
+#numerical summaries
+# Females
+fem_mean = mean(gun_deaths$age[gun_deaths$sex == 'F'], na.rm = TRUE)
+fem_median = median(gun_deaths$age[gun_deaths$sex == 'F'], na.rm = TRUE)
+
+sprintf('For females the mean age is %.2f and the median age is %.2f', fem_mean, fem_median)
+
+# Males
+male_mean = mean(gun_deaths$age[gun_deaths$sex == 'M'], na.rm = TRUE)
+male_median = median(gun_deaths$age[gun_deaths$sex == 'M'], na.rm = TRUE)
+
+sprintf('For males the mean age is %.2f and the median age is %.2f', male_mean, male_median)
+
+#graphical summaries
+
+# Females
+hist(gun_deaths$age[gun_deaths$sex == 'F'], main = "Female gun deaths by age")
+
+# Males
+hist(gun_deaths$age[gun_deaths$sex == 'M'], main = "Male gun deaths by age")
+
+```
+
+From the above we see that the female distribution is slightly left-skewed, while the male distribution is right-skewed (mean is smaller than median in the first case and mean is greater than median in the second case). The difference between the mean and median is relatively small in the case for the females, though. From the histograms we see that the most common age to be killed at as a man is right after 20, which is what one might expect. A little more surprising, to me at least, is that the highest rate of gun deaths for females happen between 40 and 60.
+
+b)
+
+```{r}
+table(gun_deaths$intent)
+```
+We see that suicide is by far the most common category for cause of gun death. Homicides also contribute a lot, while accidental deaths and undetermined deaths are much less common.
+
+c)
+
+<!---
+Hint: A two-way table might be useful here...
+--->
+
+```{r}
+# Get info
+table(gun_deaths$intent, gun_deaths$police)
+
+# Calculate proportion
+total = 1402 + 33774
+1402 / (total)
+total
+
+```
+
+1402 out of a total of 35176, or about 4.5%, of the gun deaths classified as homicides was caused by police intervention.
+
+d)
+
+<!---
+Hint: Think about logical operators and bracket notation...
+--->
+
+```{r}
+
+table(gun_deaths$month)
+
+num_spring = length(gun_deaths$month[gun_deaths$month >= 3 & gun_deaths$month < 6])
+num_summer = length(gun_deaths$month[gun_deaths$month >= 6 & gun_deaths$month < 9])
+num_fall = length(gun_deaths$month[gun_deaths$month >= 9 & gun_deaths$month < 12])
+num_winter = length(gun_deaths$month[gun_deaths$month >= 12 | gun_deaths$month < 3])
+
+sprintf("Gun death per season: Spring: %d, Summer: %d, Fall: %d, Winter: %d.", num_spring, num_summer, num_fall, num_winter)
+
+
+```
+The summer was the season with the most gun deaths with its 26449 gun deaths.
+
+e)
+
+```{r}
+deaths.2012 = gun_deaths[gun_deaths$year == 2012 & gun_deaths$education %in% c("HS/GED", "Some college", "BA+"),]
+table(deaths.2012$race)
+
+# Missing values tho?
+
+white_deaths = nrow(deaths.2012[deaths.2012$race == 'White', ])
+total = nrow(deaths.2012)
+
+sprintf("Out of the total of %d deaths in 2012 among people with at least high school education, %d was white.", total, white_deaths)
+sprintf("I.e. %.2f%% of the people killed were white.", white_deaths * 100 / total)
+
+```
+As we can se from the above, the majority of the people killed were white with roughly 71% being white.
+
+f)
+
+```{r}
+table(gun_deaths$race, gun_deaths$intent)
+```
+
+From the above I notice especially two glaring things from the data. First, for black people, there are almost 6 times as many homicides as there are suicides. Second, for white people, there are almost 6 times as many suicides than homicides, i.e. the exact opposite of black people.
+
+\newpage
+
+
+## Problem 5.
+
+a)
+
+  i. 
+
+```{r}
+#load the data
+cps = read.csv("datasets/CPSData.csv", header = TRUE)
+
+#explore age
+hist(cps$Age)
+
+#explore sex
+table(cps$Sex)
+
+#explore race
+table(cps$Race)
+```
+From the age histogram above we see that there's a relatively even distribution of people in the ages between 0 and 60. After 60 there's a dropoff of number of people, which makes sense. From the first table above we see that there's a little more women than men in the sample, which makes sense given that there's more women in society at large as well, presumably because women live longer. When it comes to race, we see that there's by far most white people with almost 106 thousand people. Black people comes second with almost 14 thousand, which is significantly less.
+
+  ii.
+  One thing I find slightly unusual about the age of the people is that there's a relatively large spike in the number of 75-80 year-olds as compared to those 70-75 and 80-85. One would suspect a more "linear" descent. However, these people are the people who would've been born after the second world war, which makes sense because we know that there was a big baby boom after the war.
+  
+b) 
+
+```{r}
+#numerical summaries
+summary(cps$PeopleInHousehold)
+IQR(cps$PeopleInHousehold)
+
+#graphical summaries
+hist(cps$PeopleInHousehold)
+boxplot(cps$PeopleInHousehold, horizontal = TRUE)
+
+```
+The median number of people in a household is 3, while the mean is 3.284, which means our data is right-skewed. This makes sense to me because most people are either living alone or in a family of 2, 3 or 4 people. Still, there are people who have much larger households. This is confirmed by the histogram. The boxplot confirmes that there are a lot of outliers who have a lot of people in their households.
+
+c)
+
+```{r}
+summary(cps$Citizenship)
+
+nrow(cps[cps$Citizenship == "Citizen, Native", ]) / nrow(cps)
+```
+The vast majority of people are native citizens, with 89% of people belonging to that category. The remaining 11% is more or less evenly divided between naturalized citizens and non-citizens.
+
+d)
+
+```{r}
+prop.table(table(cps$Race, cps$Hispanic), 1)
+
+```
+
+From the above we see that American Indians, Multiracials, and Whites are the races where at least 15% identify as hispanic.
+
+e)
+
+```{r}
+table(cps$Age, cps$Married)
+```
+From the above table we see that the amount of married people increases with age up to a certain point, i.e. around 50. After this point we see a lot of divorces in the years following, but the number of divorces is decreasing as people get older, which makes sense, I think. Also, the number of widowed people increase as people age, which also makes a lot of sense. What I found surprising, though, was the amount of 15-year olds that were divorced, a whopping 6 poeple, not to mention the one 15-year old who is widowed and the 16 who are separated.
+
+
+\newpage
+
+## Problem 6.
+
+```{r, warning = FALSE, message = FALSE}
+#load quantmod package
+library(quantmod)
+
+#load AAPL and MSFT data
+getSymbols("AAPL", from = "2018-01-01", to = "2019-07-22")
+getSymbols("MSFT", from = "2018-01-01", to = "2019-07-22")
+ 
+#obtain adjusted closing prices
+aapl.closing = Ad(AAPL)
+msft.closing = Ad(MSFT)
+
+#obtain daily volume
+aapl.volume = Vo(AAPL)
+msft.volume = Vo(MSFT)
+
+#obtain daily returns
+aapl.return = as.numeric(dailyReturn(Ad(AAPL)))
+msft.return = as.numeric(dailyReturn(Ad(MSFT)))
+```
+
+
+a)
+
+```{r}
+#plot prices
+plot(aapl.closing, col = "blue", ylim = c(50, 300))
+lines(msft.closing, col = "red")
+```
+Both companies had a positive price change over the period. It looks like Microsoft had a slightly better return. One big difference between them is that Apple looks much more volatile and more risky. It grew more from Jan '18 to Oct '18 than Microsoft, but Microsoft didn't have the drastic drop in price between Oct '18 and Jan '19 as Apple had. There's a similar effect in May '19. Microsoft might've been a better investment in this period.
+
+b)
+
+<!---
+Hint: To convert the vectors aapl.closing and msft.closing into numeric vectors, use as.numeric(aapl.closing) and as.numeric(msft.closing). See the following example
+--->
+
+```{r}
+#example: summary of aapl.closing
+summary(as.numeric(aapl.closing))
+
+#return for aapl
+100 * (as.numeric(aapl.closing)[length(aapl.closing)] - as.numeric(aapl.closing)[1]) / as.numeric(aapl.closing)[1]
+
+
+#return for msft
+100 * (as.numeric(msft.closing)[length(msft.closing)] - as.numeric(msft.closing)[1]) / as.numeric(msft.closing)[1]
+
+```
+From this we see that Microsoft had a much better return than Apple in this period. The fact that the scale on the y-axis is linear and Microsoft's price started out lower might be a little misleading in the graph above.
+
+c)
+
+```{r}
+#sd for aapl
+sd(aapl.closing)
+
+#sd for msft
+sd(msft.closing)
+
+```
+From the above we see that Microsoft is indeed the least volatile of the two stocks.
+
+d)
+
+<!---
+Hint: The commands which.max() and which.min() might be helpful...
+--->
+
+```{r}
+# Min and max for Apple
+sprintf('Apple: Max value: %.2f on %s, and min value: %.2f on %s',
+        max(aapl.closing),
+        index(aapl.closing[which.max(aapl.closing)]),
+        min(aapl.closing),
+        index(aapl.closing[which.min(aapl.closing)]))
+
+
+# Min and max for Microsoft
+sprintf('Microsoft: Max value: %.2f on %s, and min value: %.2f on %s',
+        max(msft.closing),
+        index(msft.closing[which.max(msft.closing)]),
+        min(msft.closing),
+        index(msft.closing[which.min(msft.closing)]))
+
+```
+See above.
+
+e)
+
+    i.
+    From the graph in a) above, it seems like Microsoft and Apple are pretty correlated, at least when it comes to the direction of the price movement, i.e. when apple goes up, microsoft does too, and vice versa. However, we see that Apple's movements are much more extreme than Microsoft's.
+    
+    ii.
+    Used cor to calculate how correlated the stock prices are. See below.
+    
+    
+    iii.
+    The correlation between the stock prices is at 0.5153. This is a positive number which means that there is a positive correlation between them. This means that the price of one tends to move in the same direction as the other over time. However, we see that the correlation is at roughly 0.5, which means that this is by no means a perfect correlation, i.e. there is a lot of variability between the stocks, too.
+    
+```{r}
+#graphical summary (part i.)
+plot(as.numeric(msft.closing), as.numeric(aapl.closing))
+
+#numerical summary (part ii.)
+cor(as.numeric(msft.closing), as.numeric(aapl.closing))
+
+```
