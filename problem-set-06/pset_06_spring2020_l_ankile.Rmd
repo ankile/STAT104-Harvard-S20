@@ -1,0 +1,573 @@
+---
+title: "Problem Set 6 Humble Solution Attempt"
+author: "Lars L. Ankile"
+date: \today
+fontsize: 11pt
+geometry: margin=1in
+
+output:
+  pdf_document:
+    fig_width: 5
+    fig_height: 3.5
+---
+
+
+\newpage
+
+## Problem 1.
+
+a)
+Based on the below plot it looks like people who are very overweight or underweight tend to die a little earlier, so we see a slight narrowing of the data as we move to the right in the plot. I think this makes intuitive sense as well.
+
+```{r}
+# Load the data
+library(oibiostat)
+data("prevend.samp")
+
+# Create a plot
+plot(prevend.samp$BMI ~ prevend.samp$Age)
+```
+
+
+b)
+
+```{r}
+# Fit a linear model
+min(prevend.samp$Age)
+model <- lm(prevend.samp$BMI ~ prevend.samp$Age)
+model
+model_summary <- summary(model)
+b1 <- model_summary$coef[2, 1]
+b0 <- model_summary$coef[1, 1]
+b1; b0;
+```
+
+
+i.
+The equation for the linear model is found above with the `lm`-command and is $y = 23.62710 + 0.05969x$.
+
+ii.
+The intercept is at $23.63$ which means that the model predicts that people who are 0 years old have a BMI of $23.63$. The slope is $0.060$ which means that the model predicts that people will gain $0.060$ BMI-points each year. The intercept doesn't have any interpretive meaning in this case because the youngest person in the sample is $36$, so the model reaches out of the sample for people who are below that age.
+
+iii.
+Strictly speaking, no, because the youngest person is 36, so we don't have any data to predict for people younger than that. But, at the same time, 30 is pretty close, so it might still be the case that the model has some predictive power for people around 30.
+
+iv.
+According to the model, a person 60 years of age is predicted to have a BMI of $27.21$.
+
+```{r}
+# Using R as a calculator
+b1 * 60 + b0
+```
+
+
+v.
+On average, according to the model, a person 70 years of age will have a BMI that's $1.19$ points higher than a person 50 years of age.
+
+```{r}
+# Using R as a calculator
+b1 * (70 - 50)
+```
+
+c)
+
+```{r}
+# Create residual plots
+residuals <- resid(model)
+predicted <- predict(model)
+
+# Plot of residuals vs predicted
+plot(residuals ~ predicted)
+abline(h = 0, col = "red", lty = 2)
+
+# Normal probability plot
+qqnorm(residuals)
+qqline(residuals, col = "red", lty = 2)
+```
+
+i.
+From the below plot of the residuals versus the predicted values, we can see that the assumption of linearity seems to be relatively satisfied since we see that the points seem to be relatively randomly scattered around the line, even though there are some outliers on the plus-side we don't see on the underside of the line.
+
+ii.
+Constant variability also seems relatively satisfied, but I can observe a slight tendency towards lower variance towards the higher end of the predicted spectrum. That effect seems to be small, though.
+
+iii.
+From the second plot, the `qqplot`, we see that between -1 and +1 theoretical quantile, the assumption of normality is pretty satisfied. But to the right of +1 theoretical quantile, the graph slopes upwards pretty drastically, and has a very long tail that violates this assumption. Same to the left of -1 theoretical quantile, except the effect isn't as pronounced there. Whether this invalidates the model or not, I don't know, but this is absolutely something one should keep in mind when using the model.
+
+iv.
+A point up and to the right in the `qqplot` would be located somewhere high above the regression line such that the residual for that point would be large and positive.
+
+
+d)
+The null-hypothesis for the test is that there's no association between age and BMI, $H_0: \beta_1 = 0$. The alternative hypothesis is that there is a association, $H_1: \beta_1 \neq 0$. I'm using significance level $\alpha0 = 0.05$.
+
+> To conduct the test, I look at the summary of the linear model. The t-statistic is $24.02$, with a corresponding p-value of less than $2\cdot 10^{-16}$, i.e. a very small p, which gives us evidence that would make us reject the null and conclude that BMI is in fact associated with age. The sign of the coefficient $\beta_1$ is prositive, with gives us that the two variables are positively correlated.
+
+```{r}
+# Conduct hypothesis test
+model_summary
+```
+
+
+
+
+e)
+From the below calculation, we get $R^2 = 0.0227$. $R^2$ is a number between 0 and 1, and seeing that the actual value is very close to 0 would suggest to me that the association isn't very strong i.e. the predictions are inaccurate.
+
+```{r}
+# Find R^2
+var(predicted) / var(prevend.samp$BMI)
+```
+
+
+
+
+\newpage
+
+
+## Problem 2.
+
+a)
+
+```{r}
+# Load the data
+births <- read.csv("datasets/malebirths.csv")
+
+# Define what countries we want to look at
+countries <- c("denmark", "netherlands", "canada", "usa")
+
+par(mfrow = c(2, 2), cex = 0.6)
+# Create plots
+for (country in countries) {
+  country_cap <- paste(toupper(substring(country,1, 1)),
+                    substring(country,2), sep = "")
+  formula <- births[, country] ~ births$year
+  model <- lm(formula)
+  plot(formula,
+       main = paste("Male birth proportion per year in", country_cap),
+       ylab = country_cap,
+       xlab = "Birth year",
+       xlim = c(1950, 1994),
+       ylim = c(0.508, 0.518))
+  abline(model)
+}
+```
+
+
+b)
+At a significance level of $\alpha = 0.05$, there's sufficient evidence to reject the null of there being no association for all countries.
+
+\begin{tabular}{| l | c c c c|}
+    \hline
+    Country &  $b_1$ & $S.E.(b_1)$ & $t$-stat & $p$-value \\
+		\hline
+		Denmark & $-4.289\cdot10^{-5}$ & $4.080\cdot10^{-2}$ & $-2.073$ & $0.0442$ \\
+		Netherlands & $-8.084\cdot10^{-5}$ & $1.416\cdot10^{-5}$ & $-5.71$ & $9.64\cdot10^{-7}$ \\
+		Canada & $-1.112\cdot10^{-4}$ & $2.768\cdot10^{-5}$ & $-4.017$ & $0.000738$ \\
+		USA & $-5.429\cdot10^{-5}$ & $9.393\cdot10^{-6}$ & $-5.779$ & $1.44\cdot10^{-5}$ \\
+		\hline
+\end{tabular}
+
+
+```{r}
+# Fit linear models
+
+for (country in countries) {
+  formula <- births[, country] ~ births$year
+  print(country)
+  print(summary(lm(formula)))
+}
+```
+
+
+c)
+The US has the largest t-statistic because the data lies most closely to the regression line out of all the countries.
+
+d)
+I think it's reasonable for the US to have the smallest standard error because the points, again, lie closest to the regression line for the US. USA! USA! USA! USA! USA!
+
+
+\newpage
+
+## Problem 3.
+
+a)
+
+i.
+250 out of 500, i.e. 50% of people, are registered as physically active in this data.
+
+```{r}
+# Load the data
+data("nhanes.samp.adult.500")
+
+# Identify how many individuals are physically active
+sum(nhanes.samp.adult.500$PhysActive == 'Yes')
+```
+
+ii.
+From the below boxplot, I see that the groups have very similar medians and quartiles, even though the whole box for the No-group is slightly above the yes-group. The biggest difference is probably the amount of superfat outliers, where we (not surprisingly) see more morbidly obese people among the group that does not exercise.
+
+```{r}
+# Create a plot
+plot(Weight ~ PhysActive , data = nhanes.samp.adult.500)
+```
+
+
+b)
+
+```{r}
+nhanes.samp.adult.500$PhysActiveBin <- (nhanes.samp.adult.500$PhysActive == 'Yes')
+
+# Fit a linear model
+model <- lm(Weight ~ PhysActiveBin , data = nhanes.samp.adult.500)
+summary(model)
+plot(Weight ~ PhysActiveBin , data = nhanes.samp.adult.500)
+abline(model)
+```
+
+
+
+c)
+From the below calculation, I get that the 95% percent confidence interval for the slope parameter for this linear model is $(-7.980, -0.595)$. We see that all values in the interval are negative, so we can with 95% confidence say that increased physical activity is inversely correlated with weight gain. There is just enough evidence to reject the null hypothesis at a significance level $\alpha = 0.05$, since $0$ is not contained in the interval.
+
+```{r}
+ci <- confint(model, parm = "PhysActiveBinTRUE", level = 0.95)
+```
+
+
+d)
+The 95% prediction interval for someone who's physically active is $(78.0 85.4)$ kg. I.e. we can say with 95% confidence that the true $b_1$ would predict that a person who's physically active would weigh between 78.0 kg and 85.4 kg.
+
+```{r}
+# Calculate approximate prediction interval
+b0 <- coef(summary(model))[1]
+c(ci[1] + b0, ci[2] + b0)
+```
+
+
+
+e)
+That causal relationship might very well exist, but based on the analyses done here, we can only claim correlation between the variables. We would need to conduct a controlled study to be able to claim anything about what causes what.
+
+
+f)
+Since we only have 2 groups of people I think it makes more sense to conduct inference using a two-sample t-test. Creating a linear model is very useful for predicting values for a continuous free variable, but in this case, there's no use for the linear model because there is just 2 discrete values the free variable can take.
+
+g)
+It might be that (1) people who realize that they are overweight are more likely to go to the gym to try to lose some weight, resulting in the heavy people being more physically active because they are heavy, and not heavy because they're physically active. It could also be that (2) the heavy people have a lower bar for reporting that they're physically active. Seeing that if you're very heavy, just climbing a flight of stairs might be perceived as very high effort and could be reported as being physically active. I.e. differences in definition of physical activity between groups could be a factor.
+
+\newpage
+
+## Problem 4.
+
+a)
+
+
+```{r}
+# Load the data
+load('datasets/low_bwt.Rdata')
+
+low.bwt$tox_binary <- low.bwt$toxemia == "Yes"
+
+# Fit the model
+tox_model <- lm(birthwt ~ tox_binary, data = low.bwt)
+
+plot(birthwt ~ tox_binary, data = low.bwt)
+abline(tox_model)
+
+coef(tox_model)
+
+# Calculate the confidence interval
+confint(tox_model)
+```
+
+
+i. 
+The model equation for this model is $y = 1097.21519 + 7.78481\cdot x$.
+
+ii.
+The 95% confidence interval for the slope of this model is $(-124.4203, 139.9899)$. This shows that it is very uncertain whether there is a positive, negative, or any relationship at all between the presence of toxemia and the weight of the baby.
+
+
+b)
+There seems to be a very weak, positive correlation between birth weight and toxemia. For birth weight and gestational age there seems to be very strong correlation. There also seems to be a positive correlation between gestational age and toxemia which is at least stronger than for birth weight and toxemia.
+
+```{r}
+# Graphical summaries
+par(mfrow = c(1, 3))
+plot(birthwt ~ tox_binary, data = low.bwt)
+abline(lm(birthwt ~ tox_binary, data = low.bwt))
+plot(birthwt ~ gestage, data = low.bwt)
+abline(lm(birthwt ~ gestage, data = low.bwt))
+plot(gestage ~ tox_binary, data = low.bwt)
+abline(lm(gestage ~ tox_binary, data = low.bwt))
+
+```
+
+
+
+c)
+
+```{r}
+# Fit model
+weight_model <- lm(birthwt ~ tox_binary + gestage, data = low.bwt)
+summary(weight_model)$coef
+min(low.bwt$birthwt)
+
+# Evaluate assumptions
+# Check for linearity
+par(mfrow = c(1, 2))
+plot(resid(weight_model) ~ low.bwt$tox_binary)
+abline(h = 0, lty = 2, col = "red")
+
+plot(resid(weight_model) ~ low.bwt$gestage)
+abline(h = 0, lty = 2, col = "red")
+
+# Check for constant variance
+plot(resid(weight_model) ~ fitted(weight_model))
+abline(h = 0, lty = 2, col = "red")
+
+# Check for normality fo residuals
+qqnorm(resid(weight_model))
+qqline(resid(weight_model))
+```
+
+i.
+Linearity seems to be reasonably satisfied since the residuals seem to be relatively randomly scattered around the 0-line. From the third plot we see that the residuals seem to have relatively constant variance, it might be a little higher mid-range than on the ends, but uncertain if that poses a problem. From the qqplot we see that the residuals are pretty close to being normal for a lot of the range, but deviates from the normal line to the right of the first theoretical quantile.
+
+
+
+ii.
+The coefficient for the presence of toxemia is $-206.59$ which means that when you go from having a mother without toxemia to a one with it, you would expect the average birth weight of their baby to drop by $206.59$ grams. The coefficient for the gestational age is $84.058$ which  means that for every additional week of gestational age the baby gains, the average birth weight is predicted to increase by $84$ grams. 
+The intercept probably won't have any meaningful interpretation because the intercept is at a negative amount of grams, which obviously makes it highly unlikely that it is has any relation to the real world.
+
+
+iii.
+The model equation is $y = -1286.2 + 206.59\cdot x_1 + 84.058\cdot x_2$, where $y$ is the birth weight, $x_1$ is whether the mother has toxemia, and $x_2$ is the gestational age. The predicted weight of a baby born to a mother with toxemia and gestational age of 31 weeks would be $-1286.2 + 206.59\cdot 1 + 84.058\cdot 31 = 1113$ grams.
+
+
+```{r}
+# Get some values
+b0 <- summary(weight_model)$coef[1]
+b1 <- summary(weight_model)$coef[2]
+b2 <- summary(weight_model)$coef[3]
+b0; b1; b2
+# Make prediction
+b0 + 1 * b1 + 31 * b2
+```
+
+
+
+iv.
+In the multiple regression model we have controlled for gestational age as a possible confounding variable for variance in birth weight. When we take the gestational age out of the picture for the relationship between toxemia and birth weight, we see that toxemia suddenly has a bigger impact on the weight. This makes sense because we can see, from the three scatter plots above here, the presence of toxemia is correlated with higher gestational age, and higher gestational age is correlated with higher birth weight, so taking that effect out will increase toxemia's impact on birth weight.
+
+\newpage
+
+
+## Problem 5.
+
+a)
+From the below boxplots it seems to exist a strong relationship between the education level a person has and their level of poverty. The people with only 8th grade education have a median poverty ratio of 1, while the college grads have a median poverty ratio of almost 5, which is a large difference.
+
+```{r}
+# Load the data
+data("nhanes.samp.adult.500") 
+
+# Create a plot
+plot(Poverty ~ Education, data = nhanes.samp.adult.500)
+```
+
+
+b)
+
+```{r}
+# Fit a model
+summary(lm(Poverty ~ Education, data = nhanes.samp.adult.500))
+```
+
+i.
+The intercept of the model is at roughly 1.5, which means that the model predicts a person with only 8th grade education to have a poverty ratio of $1.5$. All coefficients are positive and have very small $p$-values, which I interpret as there being a strong relationship between educational level and poverty ratio. We also see that the coefficients and associated $p$-values are respectively highest and smallest for "Some College" and "College Grad". For example, the coefficient for "College Grad" is roughly $2.5$, which means that we would expect a person that completes college to on average have a poverty ratio that is 2.5 points higher than someone who only completed some college. The minuscule $p$-value of $4.45\cdot 10^{-16}$ indicates that this relationship is strong and well approximated with this linear model.
+
+
+ii.
+Seeing that all coefficients are positive and all $p$-values are very small, there seems to be a relatively strong association between education level and poverty ratio overall.
+
+c)
+From the below boxplots, we can see that the people who own homes are seemingly best off compared to the people who rent, which makes sense. The median in the "Other" group is higher than for the "Rent"-group, which suggest to me that they might not be mainly homeless, or similar, but rather people still living with their parents.
+
+```{r}
+# Create a plot
+plot(Poverty ~ HomeOwn, data = nhanes.samp.adult.500)
+```
+
+
+
+d) 
+Below I've fitted a linear model to predict poverty level from education and home ownership status. We see that renting has a negative coefficient, which means that the predicted poverty level is lower if you rent instead of own, which checks out. We also see that all coefficients for the different levels of education are almost the same as before, which suggests to me that this model isn't necessarily an improvement. However, you can get a little more granular with your predictions, which is probably a good thing.
+
+```{r}
+# Fit a model
+summary(lm(Poverty ~ Education + HomeOwn, data = nhanes.samp.adult.500))
+```
+
+\newpage
+
+## Problem 6.
+
+a)
+From the below calculations in R, we see that the slope coefficients for `sexmale`, `hairbrown`, `glasses`, and `exercise` are significant at a $\alpha = 0.1$ significance level.
+
+```{r}
+# Load the data
+exercise1 <- read.csv("datasets/exercise_half1.csv")
+
+# Fit model
+model1 <- lm(
+  heartrate ~ classyear + sex + conc + hair + vegetarian
+               + glasses + athlete + coffee + height + exercise,
+  data = exercise1
+)
+summary(model1)
+```
+
+
+b)
+Out of the 4 variables that had significant slope coefficients, I think that `exercise` is the only one that would be almost guaranteed to be significant in the other half as well. `hairbrown` and `glasses` should have no impact whatsoever, so I expect those to not be significant in the other half. I don't know the biology too well, but I'd not be surprised if males have lower resting heart rate on average and that `sexmale` will be significant in the other half as well, but I'm not too certain.
+
+
+c)
+From the below table of the summary of the model, we see that the only variable that has significant coefficients in both sets is `exercise`, not surprisingly. I was wrong about `sexmale`, seeing that it's both insignificant and correlated with higher resting heart rate in this half of the data.
+
+```{r}
+# Load the data
+exercise2 <- read.csv("datasets/exercise_half2.csv")
+
+# Fit model
+model2 <- lm(
+  heartrate ~ classyear + sex + conc + hair + vegetarian
+               + glasses + athlete + coffee + height + exercise,
+  data = exercise2
+)
+summary(model2)
+```
+
+d)
+
+
+i.
+Most interesting is probably the exercise-line, being the only one (except from the one for the intercept) that is beyond the critical $t$-value for both halves of the data. It also seems to me that juniors are the most stressed out year (even though the results are a little weak) which could make sense. I also see that most of the lines cross the blue zero-line, while some stretch out to the right and some stretch out to the left, which seems in accordance with random chance in a relatively small data set.
+
+ii.
+Randomness. Both data sets are pretty small, so, just based on random sampling variation in the data we can get the observed effect.
+
+```{r, eval = FALSE, fig.width = 8, fig.height = 5}
+# Extract t-statistics from each model
+t1 <- coef(summary(model1))[,3]
+t2 <- coef(summary(model2))[,3]
+
+# Define axes
+plot(NA, xlim = c(min(t1, t2), max(t1, t2)), ylim = c(1, length(t1)),
+     xlab = "t-stats", ylab = "", yaxt = "n")
+tstar <- qt(0.950, model1$df.residual)
+
+# Plot vertical lines at 0 and the +/- critical value
+abline(v = 0, lty = 2, lwd = 2, col = "blue")
+abline(v = c(-tstar, tstar), lty = 3, lwd = 2, col = "red")
+
+# Plot each of the t-statistics
+for(i in 1:length(t1)){
+  lines(c(t1[i], t2[i]), c(i,i), lwd = 2)
+  points(c(t1[i], t2[i]), c(i,i), pch = "|", cex = 0.8)
+}
+
+# Add y-labels
+mtext(names(coef(model1)), side = 2, at = 1:length(t1), cex = 0.5, las = 1)
+```
+
+
+\newpage
+
+## Problem 7.
+
+a)
+
+```{r}
+# Load the data
+load("datasets/cdc_sample.Rdata")
+
+# Create wt.discr
+cdc.sample$wt_discr <- (cdc.sample$weight - cdc.sample$wtdesire) / cdc.sample$weight
+```
+
+
+b)
+The coefficient for `age` is almost zero and insignificant, which I interpret to meant that there's no relationship between age and a person's weight discrepancy. For `gender` there is a pretty strong $p$-value and a positive slope of 4.7% for being female. I.e. females have a weight discrepancy that is 4.7% percentage points higher than males, according to this model.
+
+```{r}
+# Fit a linear model
+model <- lm(wt_discr ~ age + gender, data = cdc.sample)
+summary(model)
+```
+
+c)
+
+i.
+The model equation is $\hat{\text{Weight discrepancy}} = 0.0114 + 0.001(\text{Age}) + 0.105(\text{GenderF}) -0.0013(\text{Age}\times \text{GenderF}))$.
+
+```{r}
+# Fit a linear model
+model <- lm(wt_discr ~ age*gender, data = cdc.sample)
+summary(model)
+```
+
+
+ii.
+Prediction equation for males is $\hat{\text{Weight discrepancy}} = 0.0114 + 0.001(\text{Age}) + 0.105(0) -0.0013(\text{Age}\times 0) = 0.0114 + 0.001(\text{Age})$. The prediction equation for females is $\hat{\text{Weight discrepancy}} = 0.0114 + 0.001(\text{Age}) + 0.105(1) -0.0013(\text{Age}\times 1)) = 0.1164 - 0.0003(\text{Age})$.
+
+
+iii.
+According to the $p$-value in the model, the coefficient for the interaction is significant at a significance level of $\alpha = 0.05$. However, the coefficient is pretty small at roughly -0.15 percentage points, so the interaction might not be too strong.
+
+
+d)
+The results from c) suggests to me that men and women do indeed think about body weight differently because, when adjusted for age and the interaction between age and gender, the model predicts a 10 percentage points higher weight discrepancy for females, significant at a significance level $\alpha = 0.05$. This falls in line with my overall impression that women tend to be more obsessed with being thin or having a certain kind shape than men do. There are of course a lot of individual differences and many men who are way off their target weight as well.
+
+
+\newpage
+
+## Problem 8.
+
+a)
+My plan is to first compute the change in score for each individual. Then, I'll split the data into two pieces, one for each treatment group. Then I can compare the mean difference between groups and conduct a hypothesis test on the result to see if any differences between the groups can be deemed to be significant. For that hypothesis test I'll use significance level $\alpha = 0.05$. The null hypothesis is that there is no difference between the means in the two groups, $H_0: \mu_A = \mu_B$, while the alternative hypothesis is that there is a difference, $H_A: \mu_A \neq \mu_B$.
+
+b)
+Below I've conducted a $t$-test for the differences of the mean change in score for the two groups. The mean for group A is $1.37$, while the mean for group B is $-0.102$. The $p$-value for this observation given the null is true is $0.00279$, i.e. less than the significance level of $0.05$, and we can reject the null hypothesis. This means that, based on this data, it appears that treatment A is the most effective of the two.
+
+```{r}
+# Load the data
+load("datasets/quality_of_life.Rdata")
+
+quality.of.life$diff <- quality.of.life$post.treatment.score - quality.of.life$pre.treatment.score
+quality.of.life_A <- quality.of.life[quality.of.life$treatment.group == 'A', ]
+quality.of.life_B <- quality.of.life[quality.of.life$treatment.group == 'B', ]
+
+# Conduct the analysis
+t.test(quality.of.life_A$diff, quality.of.life_B$diff)
+```
+
+c)
+Based on the below calculation for how large study groups are required based on the `power.t.test` command, I get that they would need at least $2\cdot \lceil 672.0642 \rceil = 1346$ people in total to get a power of 80% for this study.
+
+```{r}
+power.t.test(
+  n = NULL,
+  delta = 64.3 - 63,
+  sd = 8.5,
+  sig.level = 0.05,
+  power = 0.80,
+)
+```
+
+
+d)
+By administering the questionnaire before and after and taking the difference, one controls for a lot of randomness and confounding factors one cannot have any control for if you only administer it afterwards. Let's suppose, in a overly simplified example, that there are one person in each group. One of them happens to just be scoring higher on the test than the other. In this case, that person could score higher after the treatment than the other person, even though the other person in reality had more effect of their treatment than the first. To mitigate this with the second study design one must increase the number of participants to a high number as to ensure that the two different groups have the same baseline score.
