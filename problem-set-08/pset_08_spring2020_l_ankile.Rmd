@@ -1,0 +1,476 @@
+---
+title: "Problem Set 8 Solution Attempt"
+author: "Lars L. Ankile"
+date: \today
+fontsize: 11pt
+geometry: margin=1in
+
+output:
+  pdf_document:
+    fig_width: 5
+    fig_height: 3.5
+---
+
+
+\newpage
+
+## Problem 1.
+
+a)
+The model equation is $\log (\textrm{odds of failure}) = 15 - 0.2322\cdot temp$, where the coefficients are gotten from the below code.
+
+```{r, eval = FALSE, include = FALSE}
+# Install the mcsm package (do this only ONCE)
+install.packages("mcsm")
+```
+
+```{r, message = FALSE}
+# Load the data
+library(mcsm)
+data("challenger")
+
+# Get smallest temp in data
+min(challenger$temp)
+
+# Fit the model
+challenger_model <- glm(oring ~ temp, data = challenger,
+                        family = binomial(link = "logit"))
+summary(challenger_model)
+
+# Save coefficients for later
+b0 <- summary(challenger_model)$coef[1, 1]
+b1 <- summary(challenger_model)$coef[2, 1]
+```
+
+
+
+
+b)
+The smallest temperature in the data set is 53 degrees Fahrenheit, so no, the intercept does not have a meaningful interpretation.
+
+
+c)
+The slope coefficient is -0.2322, which means that the log of the odds for failure decreases by negative 0.23 per degree increase in temperature. According to the model above, the p-value of the slope is 0.032, which is less than 0.05 and can be considered significant given significance level of 0.05.
+
+
+d)
+The odds of O-ring failure is 0.3, which means that failure is less likely than failure not occurring.
+
+```{r}
+# Use r as a calculator
+exp(b0 + 70 * b1)
+```
+
+
+
+
+e)
+the odds ratio of the odds of O-ring failure with 60 F to 75 F is 32.5.
+
+```{r}
+# Use r as a calculator
+exp(b1 * (60 - 75))
+```
+
+
+
+f)
+The probability of O-ring failure when it's 30.9 F during launch is very close to 1 (0.9996).
+
+```{r}
+# Use r as a calculator
+odds <- exp(b0 + 30.9 * b1)
+
+odds / (odds + 1)
+```
+
+
+
+
+g)
+According to the model, there is a significant relationship between temperature and odds of failure. Furthermore, for 30.9 F the probability is almost 1, which suggest that the temperature was the reason for failure. However, the model isn't necessarily valid for temperatures lower than 53 F, so it's not that open and shut. Still, the evidence is compelling.
+
+
+
+
+\newpage
+
+## Problem 2.
+
+a)
+
+i.
+There are 54 females and 66 males in the population. The median age is 17.1 years, while the mean age is 17.71 years, so the age data is slightly right-skewed. The lowest and highest age is 12.09 and 23.85 years, respectively.
+
+```{r}
+# Load the data
+load('datasets/anemia.Rdata')
+summary(anemia$sex)
+summary(anemia$age)
+hist(anemia$age, breaks = 10)
+```
+
+
+
+ii.
+17.5% of the children in this data is considered substantially underweight.
+
+
+```{r}
+underweight <- nrow(anemia[anemia$whz < qnorm(0.05), ])
+
+underweight / nrow(anemia)
+```
+
+
+
+iii.
+From the below calculation, we see that 63% of the children in the study was iron deficient.
+
+```{r}
+num_deficient <- nrow(anemia[anemia$iron < 0, ])
+
+num_deficient / nrow(anemia)
+```
+
+
+
+iv.
+67.5% of children in this study are anemic, compared to roughly 15% in the US, so the difference is huge!
+
+```{r}
+num_anem <- nrow(anemia[anemia$hb < 10.5, ])
+num_anem / nrow(anemia)
+```
+
+
+
+b)
+Below I've fitted a log(odds) model to the data for the binary anemia variable as the response and sex as the explanatory variable. The equation came out to be log(odds of anemia) = 0.5306 + 0.3751 * (child is male). This would suggest that the prevalence of anemia is higher with boys, but the coefficient was not significant at a $\alpha = 0.05$ significance level, so the relationship appears to be weak, if it exists.
+
+```{r}
+anemia$anemia <- anemia$hb < 10.5
+anem_model1 <- glm(anemia ~ sex, data = anemia, family = binomial(link = "logit"))
+summary(anem_model1)
+b0 <- anem_model1$coefficients[[1]]
+b1 <- anem_model1$coefficients[[2]]
+```
+
+
+
+c)
+The odds of a female in the sample having anemia is 1.7, which is greater than 1, so it's more likely than not than a female is diagnosed with anemia.
+
+```{r}
+exp(b0)
+```
+
+
+
+d)
+From the below model we see that the relationship between presence of anemia and age is log(odds of anemia) = 2.23 - 0.084 * (age of child).  This means that the older a child is, the less likely it is to be anemic. Again, though, the relationship seems to be weak.
+
+```{r}
+anem_model2 <- glm(anemia ~ age, data = anemia, family = binomial(link = "logit"))
+summary(anem_model2)
+```
+
+
+e)
+From the below, it seems to be a difference between how age is associated per sex. The age coefficient is close to zero (-0.0053), while the coefficient for age:sexmale is a lot larger (-0.16). This suggests that the age effect for anemia (lower prevalence with higher age) is larger for boys than for girls.
+
+```{r}
+anem_model3 <- glm(anemia ~ age + sex + sex*age,
+                   data = anemia, family = binomial(link = "logit"))
+summary(anem_model3)
+```
+
+
+f)
+
+i.
+the odds of anemia for the iron deficient children is 1.92, while it is 1.53 for the non deficient children, i.e. it's definitively higher for the iron dificient children.
+```{r}
+anem_model4 <- glm(anemia ~ iron, data = anemia, family = binomial(link = "logit"))
+b0 <- anem_model4$coefficients[[1]]
+b1 <- anem_model4$coefficients[[2]]
+
+# Odds of anemia for child with iron deficiency
+exp(b0 + b1 * (-1.48))
+
+# Odds of anemia for child without iron deficiency
+exp(b0 + b1 * (0.18))
+```
+
+
+ii.
+We can see from the below model summary that the p-value of the slope is much smaller than 0.05 (> 0.002), which would suggest a significant relationship at significance level $\alpha = 0.05$.
+
+```{r}
+summary(anem_model1)
+```
+
+
+iii.
+From the below model summary, we can see that after adjusting for the confounding factors sex, age, weight, family wealth, and recent diarrhea episodes, the relationship between anemia and iron levels still persists. Furthermore, it seems to have been strengthened, because the coefficient is larger in magnitude and the associated p-value is even smaller.
+
+```{r}
+anemia_model5 <- glm(
+  anemia ~ iron + sex + age + whz + wealth + diarrhea,
+  data = anemia,
+  family = binomial(link = "logit")
+)
+
+summary(anemia_model5)
+```
+
+
+g)
+
+i.
+After thorough analysis that takes into consideration many possible factors, there is strong evidence that increased level of iron levels decrease a child's odds of having anemia. Right now, roughly 65% of children in this district suffer from anemia, so the intervention is expected to have a huge impact on children's wellbeing in the district.
+
+
+ii.
+Since we haven't done a controlled and randomized study, it's hard to conclude too definitively that introducing iron supplements will decrease the rate of anemia. It is possible that, for some other reason, children with low iron levels just happens to also have a high rate of anemia. However, the relationship is strong, so it seems reasonable to at least test the treatment and monitor the situation.
+
+
+\newpage
+
+## Problem 3.
+
+a)
+After fitting the model to the different variables, I find that the coefficients that are significant at a $\alpha = 0.1$ level are wing length and total brightness. Total brightness is negatively correlated with nestling fate, while wing length is positively correlated. This makes sense as longer wings probably makes the bird more adept at flying away, while brighter colors makes it more visible to predators.
+
+```{r}
+# Load the data
+load('datasets/rubythroats.Rdata')
+
+# Fit the model
+model <- glm(
+  nestling.fate ~ carotenoid.chroma + bib.area + total.brightness
+    + weight + wing.length + tarsus.length,
+  data = rubythroats,
+  family = binomial(link = "logit")
+)
+
+summary(model)
+```
+
+b)
+
+i.
+According to the below model, there's a significant relationship between if the bird laid a second clutch and nestling fate.
+
+```{r}
+# Fit a model
+model <- glm(
+  second.clutch ~ nestling.fate,
+  data = rubythroats,
+  family = binomial(link = "logit")
+)
+
+summary(model)
+```
+
+ii.
+In this model, the two predictors that are the most statistically significant for whether the bird lays a second clutch that year is nestling fate and total brightness.
+
+```{r}
+# Fit a model
+model <- glm(
+  second.clutch ~ nestling.fate + carotenoid.chroma
+    + bib.area + total.brightness,
+  data = rubythroats,
+  family = binomial(link = "logit")
+)
+
+summary(model)
+```
+
+iii.
+From the below model we see that the birds are more likely to have a second clutch both if the first clutch survived and if they have brighter colors. However, if the first clutch survived, the brightness is suddenly negatively correlated. This could mean that brighter birds are more likely to find a mate, but their offspring is more likely to be predated.
+
+```{r}
+# Fit a model
+model <- glm(
+  second.clutch ~ nestling.fate + total.brightness
+    + nestling.fate * total.brightness,
+  data = rubythroats,
+  family = binomial(link = "logit")
+)
+
+summary(model)
+```
+
+
+c)
+
+i.
+For the below model, the variables weight, wing length, first clutch size, and having a second clutch were positively correlated with survival.
+
+```{r}
+# Fit a model
+model1 <- glm(
+  survival ~ carotenoid.chroma + bib.area + total.brightness
+    + weight + wing.length + tarsus.length + first.clutch.size
+    + second.clutch,
+  data = rubythroats,
+  family = binomial(link = "logit")
+)
+
+summary(model1)
+```
+
+ii.
+This second model turned out to have a higher AIC-level (64.389 to 52.764), so it's less parsimonious, and we can regard the first model as the better one in this case.
+
+```{r}
+# Fit a model
+model2 <- glm(
+  survival ~ carotenoid.chroma + total.brightness
+    + wing.length + first.clutch.size,
+  data = rubythroats,
+  family = binomial(link = "logit")
+)
+
+summary(model2)
+```
+
+iii.
+Since I don't know what normal physical attributes are for these birds, but they are identical, I set all other variables to 0. I got that the bird that had 5 eggs the first time had odds of survival of $7\cdot 10^{-5}$, while the bird that only had 3 had odds of survival of $3.7\cdot 10^{-7}$, i.e. much lower, even though it's very low for both birds.
+
+```{r}
+coef <- model1$coefficients
+first_num <- coef[['first.clutch.size']]
+second_clutch <- coef[['second.clutchYes']]
+b0 <- coef[['(Intercept)']]
+
+# Odds for bird that laid 5 eggs
+exp(b0 + second_clutch + 5 * first_num)
+
+# Odds for bird that laid 3 eggs
+exp(b0 + second_clutch + 3 * first_num)
+```
+
+iv
+Both of these birds have significantly better odds of survival than the two birds, at odds of survival of 0.261 and 0.199 for bird A and B, respectively. Bird A also has a higher odds of survival than bird B.
+
+```{r}
+bib <- coef[['bib.area']]
+brightness <- coef[['total.brightness']]
+carotenoid <- coef[['carotenoid.chroma']]
+tarsus <- coef[['tarsus.length']]
+wing <- coef[['wing.length']]
+weight <- coef[['weight']]
+
+# Female A
+exp(b0 + 350 * bib + 35 * brightness + 0.9 * carotenoid
+    + 19.5 * tarsus + 51 * wing + 10.8 * weight
+    + 4 * first_num + second_clutch)
+
+# Female B
+exp(b0 + 300 * bib + 20 * brightness + 0.85 * carotenoid
+    + 19.0 * tarsus + 50 * wing + 10.9 * weight
+    + 3 * first_num + second_clutch)
+
+```
+
+
+d)
+In the last analysis we see, slightly counter-intuitively, that the bird with more ornamentation (bird A) also has the higher odds of survival. This is counter-intuitive since carotenoid chroma, overall brightness, bib area, and tarsus length all are negatively correlated with survival in the model. What seems to be working in bird A's favor is that it had more eggs in the first clutch. The ability to have many eggs in the first clutch is probably an indication of fitness. There might also be some effect that males are probably more attracted to more ornamented females, so the better ornamented females attract better males and will in turn have children with "better" genes.
+
+
+
+\newpage
+
+
+## Problem 5.
+This study investigates whether smoking causes lower respiratory volume in children. The conclusion was that, based on the data used in this study, there is not sufficient evidence to claim that there exists any relationship between smoking and respiratory volume.
+
+This study is based on forced respiratory volume (FEV) measurements of 654 children in the ages 3 through 19. A higher FEV indicates better lung function. In the data we have variables indicating whether or not the child is a smoker, their height, sex, and age. I chose to use $\alpha = 0.05$ as the significanfe level in this study.
+
+In the first (1) model fitted below, smoking appears to have a positive relationship with FEV, which seems very counbter-intutive. After fitting a more complex model, that controls for age, height, and sex, the relationship reverses, and is now negative. The coefficient is hoever not statistically significant at a p-value of $p=0.141 > 0.05=\alpha$. That means that we don't have sufficient evidence to reject the null hypothesis that is that smoking has no effect on FEV.
+
+It is interesting to note, though, that higher age, being male, and being taller, all have strong relationships with higher FEV. Furthermore, older poeple also have higher likelyhood of smoking (see model 3), and more surprisingly, taller people have a higher likelyhood of smoking (see model 5). That is what's causing the weird relationship in model 1, where more smoking seems to increase FEV.
+
+
+
+\newpage
+
+*Problem 5 Appendix.*
+
+```{r}
+# Load the data
+load('datasets/lung_function.Rdata')
+
+# Initial summary of data
+par(mfrow = c(1, 2))
+hist(lung.function$fev)
+hist(lung.function$age)
+summary(lung.function$sex)
+```
+
+```{r}
+# (1) Initial, naive model
+model <- lm(fev ~ smoke, data = lung.function)
+summary(model)
+```
+
+
+```{r}
+# (2) More complex model, controlling for different variables
+model <- lm(fev ~ smoke + age + sex + height, data = lung.function)
+summary(model)
+```
+
+
+```{r}
+# (3) Exploration of the relationship between age and smoking
+model <- glm(smoke ~ age, data = lung.function, family = binomial(link = 'logit'))
+summary(model)
+```
+
+```{r}
+# (4) Amount of men and women who smoke
+men <- lung.function[lung.function$sex == 'male', ]
+men_smokers <- men[lung.function$smoke == 'smoker', ]
+
+women <- lung.function[lung.function$sex == 'female', ]
+women_smokers <- women[lung.function$smoke == 'smoker', ]
+
+
+nrow(men_smokers) / nrow(men)
+nrow(women_smokers) / nrow(women)
+```
+
+```{r}
+# (5) Exploration of the relationship between height and smoking
+model <- glm(smoke ~ height, data = lung.function, family = binomial(link = 'logit'))
+summary(model)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
